@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Valhalla Shope - Tienda & Gestión</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#8A9A5B">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Valhalla">
+    
+    <link rel="manifest" id="my-manifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=DM+Sans:opsz,wght@9..40,400;500;700&family=Great+Vibes&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 1. SISTEMA DE DISEÑO --- */
+        :root {
+            --bg-color: #FAFAF8;
+            --text-main: #333333;
+            --text-secondary: #777777;
+            --accent-sage: #8A9A5B;
+            --accent-sage-dark: #6e7c49;
+            --accent-peach: #FFCDBC;
+            --white: #FFFFFF;
+            --error: #ff6b6b;
+            --success: #51cf66;
+            --gutter: 40px;
+            --card-radius: 6px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 20px;
+            padding-bottom: 100px;
+            min-height: 100vh;
+            overscroll-behavior-y: none;
+        }
+
+        /* --- UTILIDADES --- */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .flex { display: flex; }
+        .gap-10 { gap: 10px; }
+        .justify-between { justify-content: space-between; }
+        .align-center { align-items: center; }
+        .w-100 { width: 100%; }
+        .mb-20 { margin-bottom: 20px; }
+        
+        /* Badges */
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-badge.admin { background: #333; color: white; }
+        .status-badge.seller { background: var(--accent-sage); color: white; }
+        .status-badge.customer { background: var(--accent-peach); color: var(--text-main); }
+        
+        .sale-status { font-size: 0.75rem; padding: 2px 6px; border-radius: 3px; font-weight: 600; }
+        .sale-status.pending { background: #fff3cd; color: #856404; }
+        .sale-status.settled { background: #d4edda; color: #155724; }
+
+        /* --- HEADER --- */
+        header {
+            position: relative; display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 40px; max-width: 1400px; margin-left: auto; margin-right: auto;
+            padding: 20px 0; border-bottom: 1px solid rgba(0,0,0,0.05); height: 120px;
+        }
+        .header-left { display: flex; gap: 15px; z-index: 2; }
+
+        .logo-container {
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            text-align: center; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; z-index: 1; color: var(--text-main); text-decoration: none;
+        }
+        .logo-script { font-family: 'Great Vibes', cursive; font-size: 3rem; line-height: 0.8; margin-bottom: 5px; }
+        .logo-subtitle { font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 0.4em; text-transform: uppercase; font-weight: 700; }
+        .logo-icon svg { width: 32px; height: 32px; stroke: var(--text-main); stroke-width: 1.5; fill: none; }
+
+        .nav-icons { display: flex; gap: 20px; align-items: center; z-index: 2; }
+        .icon-btn { background: none; border: none; cursor: pointer; padding: 5px; position: relative; display: flex; color: var(--text-main); transition: opacity 0.2s; }
+        .icon-btn:hover { opacity: 0.6; }
+        
+        .user-indicator { font-size: 0.8rem; font-weight: 700; margin-right: 10px; color: var(--accent-sage); }
+        .staff-indicator { font-size: 0.75rem; background: #eee; padding: 2px 6px; border-radius: 4px; margin-right: 10px; color: #555; }
+
+        .cart-badge {
+            position: absolute; top: -2px; right: -2px; background-color: #d17858;
+            color: white; font-size: 0.7rem; font-weight: bold; width: 18px; height: 18px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .cart-badge.visible { opacity: 1; }
+
+        /* --- LAYOUT --- */
+        .main-container { max-width: 1400px; margin: 0 auto; display: flex; gap: 50px; padding: 0 20px; }
+        .sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 40px; height: fit-content; }
+        .sidebar h3 { font-size: 1.1rem; margin-bottom: 20px; font-weight: 700; letter-spacing: -0.5px; }
+        .category-list { list-style: none; }
+        .category-item { padding: 10px 0; color: var(--text-secondary); cursor: pointer; transition: color 0.2s; font-size: 1rem; border-bottom: 1px solid transparent; }
+        .category-item:hover { color: var(--text-main); }
+        .category-item.active { color: var(--text-main); font-weight: 700; border-bottom: 1px solid var(--accent-sage); display: inline-block; }
+
+        .install-btn-container { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
+        .install-btn { background-color: #333; color: white; width: 100%; padding: 10px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; transition: background 0.3s; }
+        .install-btn:hover { background-color: #000; }
+
+        .product-grid { flex-grow: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
+
+        /* --- CARDS --- */
+        .product-card { background: transparent; cursor: pointer; animation: fadeIn 0.5s ease; position: relative; }
+        .product-card.out-of-stock { opacity: 0.6; pointer-events: none; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .image-wrapper { position: relative; width: 100%; aspect-ratio: 4 / 5; overflow: hidden; border-radius: var(--card-radius); background-color: #eee; margin-bottom: 16px; }
+        .product-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--transition-smooth); }
+        .image-wrapper:hover .product-img { transform: scale(1.05); }
+
+        .badge { position: absolute; top: 12px; left: 12px; padding: 5px 10px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; z-index: 10; border-radius: 2px; }
+        .badge.new { background-color: var(--badge-new); color: white; }
+        .badge.sale { background-color: var(--accent-peach); color: var(--text-main); }
+        .badge.stock-out { background-color: var(--error); color: white; right: 12px; left: auto; }
+
+        .quick-view-btn {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background-color: var(--accent-sage); color: var(--white); border: none; padding: 12px 28px;
+            border-radius: 50px; font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.85rem;
+            opacity: 0; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.15); white-space: nowrap; cursor: pointer;
+        }
+        .image-wrapper:hover .quick-view-btn { opacity: 1; transform: translateX(-50%) translateY(0); }
+        
+        .product-info { display: flex; flex-direction: column; gap: 4px; }
+        .product-name { font-size: 1rem; font-weight: 500; color: var(--text-main); }
+        .price-container { font-size: 0.95rem; color: var(--text-secondary); }
+        .stock-info { font-size: 0.75rem; color: var(--accent-sage); font-weight: 600; }
+        .category-tag { font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+
+        /* --- MODALES --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--white); padding: 40px; border-radius: 8px; width: 90%; max-width: 500px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; }
+        .modal-content.large { max-width: 900px; }
+        .close-modal { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); }
+
+        /* Formularios */
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
+        .form-input, .form-textarea, .form-select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 1rem; transition: border-color 0.2s; background: white; }
+        .form-input-multi { margin-bottom: 10px; }
+        .form-input:focus { outline: none; border-color: var(--accent-sage); }
+        input[type="file"].form-input { padding: 8px; font-size: 0.85rem; }
+        
+        .btn-primary { width: 100%; background-color: var(--accent-sage); color: white; padding: 14px; border: none; border-radius: 4px; font-weight: 500; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
+        .btn-primary:hover { background-color: var(--accent-sage-dark); }
+        .btn-danger { background-color: var(--error); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .btn-secondary { background-color: #e0e0e0; color: #333; border: none; padding: 14px; border-radius: 4px; font-weight: 500; cursor: pointer; font-size: 1rem; }
+        .btn-secondary:hover { background-color: #d0d0d0; }
+
+        /* Tabs de Auth */
+        .auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid #eee; }
+        .auth-tab { flex: 1; padding: 10px; cursor: pointer; text-align: center; border-bottom: 2px solid transparent; color: #999; font-weight: 500; }
+        .auth-tab.active { border-bottom-color: var(--accent-sage); color: var(--text-main); }
+        .auth-form { display: none; }
+        .auth-form.active { display: block; animation: fadeIn 0.3s; }
+
+        /* --- ADMIN PANEL --- */
+        .admin-fab { position: fixed; bottom: 30px; right: 30px; background-color: var(--text-main); color: white; width: 60px; height: 60px; border-radius: 50%; display: none; align-items: center; justify-content: center; box-shadow: 0 5px 20px rgba(0,0,0,0.2); cursor: pointer; z-index: 100; font-size: 1.5rem; border: none; }
+        .admin-tabs { display: flex; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+        .admin-tab { padding: 10px 20px; cursor: pointer; font-weight: 500; color: var(--text-secondary); border-bottom: 2px solid transparent; }
+        .admin-tab.active { color: var(--text-main); border-bottom-color: var(--accent-sage); }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; animation: fadeIn 0.3s; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .report-table th, .report-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .report-table th { font-weight: 600; color: var(--text-main); background: #f9f9f9; }
+        .total-highlight { color: var(--accent-sage); font-weight: 700; }
+
+        /* Checkout */
+        .payment-options { display: flex; gap: 15px; margin-bottom: 20px; }
+        .payment-option-label { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 15px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 500; }
+        .payment-radio:checked + .payment-option-label { border-color: var(--accent-sage); background-color: rgba(138, 154, 91, 0.1); color: var(--accent-sage); }
+        .payment-radio { display: none; }
+
+        /* Estilo Descripción en Vista Rápida */
+        .product-desc-modal { margin-top: 15px; margin-bottom: 15px; color: var(--text-secondary); line-height: 1.6; font-size: 0.95rem; }
+
+        footer { margin-top: 80px; text-align: center; font-size: 0.8rem; color: #ccc; }
+        .social-icons { display: flex; justify-content: center; gap: 25px; margin-bottom: 30px; }
+        .social-link { color: var(--text-secondary); }
+        .social-link svg { width: 24px; height: 24px; }
+        .admin-link { color: inherit; text-decoration: none; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            header { flex-direction: row; height: auto; padding: 15px 0; }
+            .header-left { display: none; }
+            .logo-container { position: relative; left: auto; top: auto; transform: none; order: 2; }
+            .nav-icons { order: 3; }
+            .main-container { flex-direction: column; gap: 20px; }
+            .sidebar { width: 100%; position: static; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+            .category-list { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 5px; white-space: nowrap; }
+            .install-btn-container { display: flex; justify-content: center; }
+            .product-grid { grid-template-columns: 1fr; }
+            .modal-content.large { width: 95%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="header-left">
+            <button class="icon-btn" title="Buscar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
+        </div>
+
+        <a href="#" class="logo-container">
+            <div class="logo-script">valhalla</div>
+            <div class="logo-subtitle">SHOPE</div>
+            <div class="logo-icon">
+                <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10,75 Q25,80 40,75 T70,75 T100,75" stroke-width="1" opacity="0.4"></path>
+                    <path d="M15,65 Q50,85 85,65"></path>
+                    <path d="M15,65 Q5,55 10,40 Q12,32 20,32 L20,35 Q14,38 15,45 Q15,55 22,60"></path>
+                    <path d="M85,65 Q95,55 92,40 Q90,35 88,38"></path>
+                    <line x1="50" y1="65" x2="50" y2="20"></line>
+                    <path d="M25,25 H75 L72,55 Q50,60 28,55 Z"></path>
+                    <line x1="38" y1="25" x2="40" y2="55" stroke-width="1"></line>
+                    <line x1="50" y1="25" x2="50" y2="57" stroke-width="1"></line>
+                    <line x1="62" y1="25" x2="60" y2="55" stroke-width="1"></line>
+                    <circle cx="30" cy="65" r="3" fill="var(--bg-color)" stroke-width="1"></circle>
+                    <circle cx="50" cy="68" r="3" fill="var(--bg-color)" stroke-width="1"></circle>
+                    <circle cx="70" cy="65" r="3" fill="var(--bg-color)" stroke-width="1"></circle>
+                </svg>
+            </div>
+        </a>
+
+        <div class="nav-icons">
+            <div id="userInfoDisplay"></div>
+            <button class="icon-btn" title="Mi Cuenta" onclick="abrirModalCliente()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </button>
+            <button class="icon-btn" onclick="abrirCarrito()" title="Ver Carrito">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line></svg>
+                <span class="cart-badge" id="cartBadge">0</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="sidebar">
+            <h3>Categorías</h3>
+            <ul class="category-list">
+                <li class="category-item active" onclick="filtrarCategoria('all', this)">Ver Todo</li>
+                <li class="category-item" onclick="filtrarCategoria('hogar', this)">Hogar & Decoración</li>
+                <li class="category-item" onclick="filtrarCategoria('muebles', this)">Muebles</li>
+                <li class="category-item" onclick="filtrarCategoria('electronica', this)">Electrónica</li>
+            </ul>
+            <div id="installContainer" class="install-btn-container">
+                <button id="btnInstallApp" class="install-btn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Instalar App</button>
+            </div>
+        </aside>
+        <div class="product-grid" id="productGrid"></div>
+    </div>
+
+    <footer>
+        <div class="social-icons">
+            <a href="#" class="social-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
+            <a href="#" class="social-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path></svg></a>
+        </div>
+        <p>© 2024 Valhalla Shope. Todos los derechos reservados.</p>
+        <br>
+        <span class="admin-link" onclick="abrirModalStaff()">Admin Access</span>
+    </footer>
+
+    <button class="admin-fab" id="btnAdminPanel" onclick="abrirPanelAdmin()"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg></button>
+
+    <!-- --- MODALES --- -->
+
+    <!-- LOGIN CLIENTE -->
+    <div class="modal-overlay" id="modalAuthCliente">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="close-modal" onclick="cerrarModales()">&times;</button>
+            <h2 class="text-center mb-20">Bienvenido</h2>
+            <div class="auth-tabs"><div class="auth-tab active" onclick="switchClientAuth('login')">Iniciar Sesión</div><div class="auth-tab" onclick="switchClientAuth('register')">Registrarse</div></div>
+            <form id="formClientLogin" class="auth-form active" onsubmit="handleClientLogin(event)">
+                <div class="form-group"><label class="form-label">Email</label><input type="email" id="clientEmailLogin" class="form-input" required></div>
+                <div class="form-group"><label class="form-label">Contraseña</label><input type="password" id="clientPassLogin" class="form-input" required></div>
+                <button class="btn-primary w-100">Entrar</button>
+            </form>
+            <form id="formClientRegister" class="auth-form" onsubmit="handleClientRegister(event)">
+                <div class="form-group"><label class="form-label">Nombre Completo</label><input type="text" id="clientNameReg" class="form-input" required></div>
+                <div class="form-group"><label class="form-label">Email</label><input type="email" id="clientEmailReg" class="form-input" required></div>
+                <div class="form-group"><label class="form-label">Contraseña</label><input type="password" id="clientPassReg" class="form-input" required></div>
+                <button class="btn-primary w-100">Crear Cuenta</button>
+            </form>
+            <div id="clientLogoutSection" class="hidden text-center" style="margin-top:20px;">
+                <p class="mb-20">Hola, <strong id="loggedClientName"></strong></p>
+                <button class="btn-danger w-100" onclick="logoutClient()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN STAFF -->
+    <div class="modal-overlay" id="modalAuthStaff">
+        <div class="modal-content" style="max-width: 400px; border-top: 5px solid #333;">
+            <button class="close-modal" onclick="cerrarModales()">&times;</button>
+            <h2 class="text-center mb-20">Acceso Personal</h2>
+            <form id="formStaffLogin" onsubmit="handleStaffLogin(event)">
+                <div class="form-group"><label class="form-label">Usuario</label><input type="text" id="staffUser" class="form-input" required></div>
+                <div class="form-group"><label class="form-label">Contraseña</label><input type="password" id="staffPass" class="form-input" required></div>
+                <button class="btn-primary w-100" style="background:#333;">Entrar al Sistema</button>
+            </form>
+            <div id="staffLogoutSection" class="hidden text-center" style="margin-top:20px;">
+                <p class="mb-20">Sesión iniciada: <strong id="loggedStaffName"></strong></p>
+                <button class="btn-danger w-100" onclick="logoutStaff()">Salir del Sistema</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PANEL -->
+    <div class="modal-overlay" id="modalAdmin">
+        <div class="modal-content large">
+            <button class="close-modal" onclick="cerrarModales()">&times;</button>
+            <h2 class="mb-20">Gestión Valhalla</h2>
+            <div class="admin-tabs">
+                <div class="admin-tab role-admin active" onclick="switchAdminTab('productos')">Inventario</div>
+                <div class="admin-tab role-admin" onclick="switchAdminTab('usuarios')">Equipo</div>
+                <div class="admin-tab role-admin" onclick="switchAdminTab('reportes')">Reportes</div>
+                <div class="admin-tab role-seller" onclick="switchAdminTab('mis-ventas')">Mis Ventas</div>
+            </div>
+            <div id="tab-productos" class="admin-section active">
+                <button class="btn-primary mb-20" onclick="abrirFormProducto()">+ Agregar Producto</button>
+                <div style="max-height:400px; overflow-y:auto;"><table class="report-table"><thead><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Acción</th></tr></thead><tbody id="inventoryTableBody"></tbody></table></div>
+            </div>
+            <div id="tab-usuarios" class="admin-section">
+                <div style="background:#f9f9f9; padding:20px; border-radius:6px; margin-bottom:20px;">
+                    <h4>Nuevo Vendedor</h4>
+                    <form onsubmit="crearUsuario(event)" class="flex gap-10" style="flex-wrap:wrap; margin-top:10px;">
+                        <input type="text" id="newUserName" placeholder="Nombre" class="form-input" style="flex:1" required>
+                        <input type="text" id="newUserUser" placeholder="Usuario" class="form-input" style="flex:1" required>
+                        <input type="password" id="newUserPass" placeholder="Contraseña" class="form-input" style="flex:1" required>
+                        <button class="btn-primary">Crear</button>
+                    </form>
+                </div>
+                <table class="report-table"><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Acción</th></tr></thead><tbody id="usersTableBody"></tbody></table>
+            </div>
+            <div id="tab-reportes" class="admin-section">
+                <div class="flex gap-10" style="flex-wrap:wrap;">
+                    <div style="flex:1; min-width:300px;"><h4>Ventas Recientes</h4><div style="max-height:300px; overflow-y:auto;"><table class="report-table"><thead><tr><th>Fecha</th><th>Vendedor</th><th>Total</th><th>Estado</th></tr></thead><tbody id="salesTableBody"></tbody></table></div></div>
+                    <div style="flex:1; min-width:300px; background:#f0f7f0; padding:20px; border-radius:6px; height:fit-content;"><h3 style="color:var(--accent-sage-dark);">Corte de Caja</h3><table class="report-table" style="background:white; margin-top:10px;"><thead><tr><th>Vendedor</th><th>Monto</th><th>Acción</th></tr></thead><tbody id="cashReportBody"></tbody></table></div>
+                </div>
+            </div>
+             <div id="tab-mis-ventas" class="admin-section">
+                <div style="background: #f0f7f0; padding: 20px; border-radius: 6px; margin-bottom: 20px; text-align: center;"><h3>Mi Corte</h3><strong id="myCashTotal" style="font-size: 2.5rem; color: var(--accent-sage);">$0.00</strong></div>
+                <div style="max-height: 400px; overflow-y: auto;"><table class="report-table"><thead><tr><th>Fecha</th><th>Monto</th><th>Estado</th></tr></thead><tbody id="mySalesTableBody"></tbody></table></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AGREGAR PRODUCTO -->
+    <div class="modal-overlay" id="modalAddProduct">
+        <div class="modal-content">
+            <button class="close-modal" onclick="document.getElementById('modalAddProduct').classList.remove('active')">&times;</button>
+            <h2 class="mb-20">Nuevo Producto</h2>
+            <form onsubmit="guardarProducto(event)">
+                <div class="form-group"><label class="form-label">Nombre</label><input type="text" class="form-input" id="inputName" required></div>
+                <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" id="inputDesc" rows="2" placeholder="Breve descripción del producto" required></textarea></div>
+                <div class="form-group"><label class="form-label">Categoría</label><select class="form-select" id="inputCategory"><option value="hogar">Hogar</option><option value="muebles">Muebles</option><option value="electronica">Electrónica</option></select></div>
+                <div class="flex gap-10"><div class="form-group w-100"><label class="form-label">Precio ($)</label><input type="number" class="form-input" id="inputPrice" required></div><div class="form-group w-100"><label class="form-label">Stock</label><input type="number" class="form-input" id="inputStock" value="10" required></div></div>
+                <div class="form-group">
+                    <label class="form-label">Imágenes (Subir archivos)</label>
+                    <input type="file" class="form-input form-input-multi" id="inputImage1" accept="image/*" required>
+                    <input type="file" class="form-input form-input-multi" id="inputImage2" accept="image/*">
+                    <input type="file" class="form-input form-input-multi" id="inputImage3" accept="image/*">
+                    <input type="file" class="form-input" id="inputImage4" accept="image/*">
+                    <small style="color:#666; font-size:0.8rem; margin-top:5px; display:block;">Las imágenes se guardan localmente.</small>
+                </div>
+                <button class="btn-primary w-100">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- VISTA RÁPIDA -->
+    <div class="modal-overlay" id="modalView">
+        <div class="modal-content">
+            <button class="close-modal" onclick="cerrarModales()">&times;</button>
+            <img src="" id="viewImg" style="width:100%; height:300px; object-fit:cover; border-radius:6px; margin-bottom:15px;">
+            <h2 id="viewTitle"></h2>
+            <!-- Descripción agregada aquí -->
+            <p id="viewDesc" class="product-desc-modal"></p>
+            <p id="viewPrice" style="color:var(--accent-sage); font-weight:700; font-size:1.2rem;"></p>
+            <p id="viewStock" style="font-size:0.9rem; color:#666;"></p>
+            <div class="flex gap-10" style="margin-top:20px;"><input type="number" id="qtyInput" value="1" min="1" style="width:60px; padding:10px; border:1px solid #ddd; border-radius:4px;"><button class="btn-primary w-100" onclick="agregarAlCarrito()">Añadir al Carrito</button></div>
+        </div>
+    </div>
+
+    <!-- CONFIRMAR BORRADO -->
+    <div class="modal-overlay" id="modalConfirm">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <h3 style="margin-bottom: 20px;">¿Estás seguro?</h3>
+            <p class="mb-20">Estás a punto de eliminar este artículo del inventario. Esta acción no se puede deshacer.</p>
+            <div class="flex gap-10 justify-between">
+                <button class="btn-secondary w-100" onclick="cerrarModales()">Cancelar</button>
+                <button class="btn-danger w-100" onclick="ejecutarBorrado()">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARRITO & CHECKOUT -->
+    <div class="modal-overlay" id="modalCart">
+        <div class="modal-content">
+            <button class="close-modal" onclick="cerrarModales()">&times;</button>
+            <h2>Carrito</h2><div id="cartItemsContainer" style="margin-top:20px;"></div>
+            <div style="margin-top:20px; padding-top:20px; border-top:2px solid #333; display:flex; justify-content:space-between; font-weight:700; font-size:1.2rem;"><span>Total:</span> <span id="cartTotalValue">$0.00</span></div>
+            <button class="btn-primary w-100" style="margin-top:20px;" onclick="abrirCheckout()">Proceder al Pago</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalCheckout">
+        <div class="modal-content">
+            <button class="close-modal" onclick="cerrarModales()">&times;</button>
+            <h2>Finalizar Compra</h2>
+            <div id="checkoutInfoBox" style="background:#f0f7f0; padding:15px; border-radius:4px; margin:20px 0; font-size:0.9rem;"></div>
+            <form onsubmit="finalizarCompra(event)">
+                <div class="form-group"><label class="form-label">Nombre Cliente</label><input type="text" id="checkoutClientName" class="form-input" required placeholder="Nombre completo"></div>
+                <div class="form-group"><label class="form-label">Dirección</label><input type="text" class="form-input" placeholder="Calle y número" required></div>
+                <div class="form-group"><label class="form-label">Pago</label>
+                    <div class="payment-options">
+                        <label class="payment-option-label"><input type="radio" name="pay" value="cash" checked> Efectivo</label>
+                        <label class="payment-option-label"><input type="radio" name="pay" value="card"> Tarjeta</label>
+                    </div>
+                </div>
+                <button class="btn-primary w-100">Confirmar Pedido</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LÓGICA JS -->
+    <script>
+        // --- MANIFEST PWA ---
+        const manifest={name:"Valhalla Shope",short_name:"Valhalla",start_url:".",display:"standalone",background_color:"#FAFAF8",theme_color:"#8A9A5B",icons:[{src:"https://cdn-icons-png.flaticon.com/512/3014/3014291.png",sizes:"192x192",type:"image/png"}]};
+        document.querySelector('#my-manifest').setAttribute('href', URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type: 'application/json'})));
+        let deferredPrompt; const installBtn = document.getElementById('btnInstallApp');
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('installContainer').style.display = 'block'; });
+        installBtn.addEventListener('click', async () => { if(deferredPrompt){ deferredPrompt.prompt(); const {outcome} = await deferredPrompt.userChoice; if(outcome==='accepted') document.getElementById('installContainer').style.display = 'none'; deferredPrompt = null; } else { alert("En iOS: Pulsa Compartir > Agregar al inicio"); } });
+
+        // --- BASES DE DATOS ---
+        const DB = { 
+            PRODS: 'valhalla_products_v7', 
+            STAFF: 'valhalla_staff_v1', 
+            CUSTOMERS: 'valhalla_customers_v1',
+            SALES: 'valhalla_sales_v1' 
+        };
+
+        // Datos Init
+        const initProds = [
+            {id:1, categoria:'hogar', nombre:'Jarrón Terra', desc:'Hermoso jarrón de cerámica hecho a mano, ideal para decorar cualquier rincón de tu hogar.', precio:550, stock:10, images:['https://images.unsplash.com/photo-1578500494198-246f612d3b3d?q=80&w=400']},
+            {id:2, categoria:'electronica', nombre:'Altavoz Nord', desc:'Altavoz bluetooth de alta fidelidad con diseño minimalista y batería de larga duración.', precio:1200, stock:5, images:['https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?q=80&w=400']}
+        ];
+        const initStaff = [{id:'admin', name:'Administrador', user:'admin', pass:'admin123', role:'admin'}];
+
+        // Estado
+        let products = JSON.parse(localStorage.getItem(DB.PRODS)) || initProds;
+        let staffList = JSON.parse(localStorage.getItem(DB.STAFF)) || initStaff;
+        let customerList = JSON.parse(localStorage.getItem(DB.CUSTOMERS)) || [];
+        let sales = JSON.parse(localStorage.getItem(DB.SALES)) || [];
+
+        let currentStaff = null;
+        let currentClient = null;
+        let cart = [];
+        let productSelected = null;
+        let currentFilter = 'all';
+        let productToDeleteId = null; // Para el borrado
+
+        // --- AUTH CLIENTE ---
+        function abrirModalCliente() {
+            if(currentClient) {
+                document.querySelector('.auth-tabs').classList.add('hidden');
+                document.getElementById('formClientLogin').classList.remove('active');
+                document.getElementById('formClientRegister').classList.remove('active');
+                document.getElementById('clientLogoutSection').classList.remove('hidden');
+            } else {
+                document.querySelector('.auth-tabs').classList.remove('hidden');
+                document.getElementById('clientLogoutSection').classList.add('hidden');
+                switchClientAuth('login');
+            }
+            document.getElementById('modalAuthCliente').classList.add('active');
+        }
+
+        function switchClientAuth(mode) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            if(mode === 'login') {
+                document.querySelectorAll('.auth-tab')[0].classList.add('active');
+                document.getElementById('formClientLogin').classList.add('active');
+            } else {
+                document.querySelectorAll('.auth-tab')[1].classList.add('active');
+                document.getElementById('formClientRegister').classList.add('active');
+            }
+        }
+
+        function handleClientRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('clientNameReg').value;
+            const email = document.getElementById('clientEmailReg').value;
+            const pass = document.getElementById('clientPassReg').value;
+            if(customerList.find(c => c.email === email)) return alert("Email ya registrado");
+            const newClient = { id: Date.now(), name, email, pass };
+            customerList.push(newClient);
+            localStorage.setItem(DB.CUSTOMERS, JSON.stringify(customerList));
+            currentClient = newClient; updateUI(); cerrarModales(); alert("¡Registro exitoso! Bienvenido.");
+        }
+
+        function handleClientLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('clientEmailLogin').value;
+            const pass = document.getElementById('clientPassLogin').value;
+            const user = customerList.find(c => c.email === email && c.pass === pass);
+            if(user) { currentClient = user; updateUI(); cerrarModales(); } else { alert("Datos incorrectos"); }
+        }
+
+        function logoutClient() { currentClient = null; updateUI(); cerrarModales(); }
+
+        // --- AUTH STAFF ---
+        function abrirModalStaff() {
+            if(currentStaff) {
+                document.getElementById('formStaffLogin').classList.add('hidden');
+                document.getElementById('staffLogoutSection').classList.remove('hidden');
+            } else {
+                document.getElementById('formStaffLogin').classList.remove('hidden');
+                document.getElementById('staffLogoutSection').classList.add('hidden');
+            }
+            document.getElementById('modalAuthStaff').classList.add('active');
+        }
+
+        function handleStaffLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('staffUser').value;
+            const p = document.getElementById('staffPass').value;
+            const user = staffList.find(s => s.user === u && s.pass === p);
+            if(user) {
+                currentStaff = user;
+                if(currentClient) { currentClient = null; alert("Sesión de cliente cerrada."); }
+                updateUI(); cerrarModales();
+            } else { alert("Credenciales inválidas"); }
+        }
+
+        function logoutStaff() { currentStaff = null; updateUI(); cerrarModales(); }
+
+        // --- UI UPDATE ---
+        function updateUI() {
+            const info = document.getElementById('userInfoDisplay');
+            const btnAdmin = document.getElementById('btnAdminPanel');
+            const loggedClientName = document.getElementById('loggedClientName');
+            const loggedStaffName = document.getElementById('loggedStaffName');
+
+            info.innerHTML = '';
+            btnAdmin.style.display = 'none';
+
+            if(currentStaff) {
+                info.innerHTML = `<span class="status-badge ${currentStaff.role}">${currentStaff.role}</span> ${currentStaff.name}`;
+                loggedStaffName.textContent = currentStaff.name;
+                btnAdmin.style.display = 'flex';
+            } else if (currentClient) {
+                info.innerHTML = `<span class="status-badge customer">Cliente</span> ${currentClient.name}`;
+                loggedClientName.textContent = currentClient.name;
+            }
+        }
+
+        // --- PRODUCTOS ---
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            grid.innerHTML = '';
+            const list = currentFilter === 'all' ? products : products.filter(p => p.categoria === currentFilter);
+            list.forEach(p => {
+                const stockBadge = p.stock > 0 ? '' : '<span class="badge stock-out">Agotado</span>';
+                grid.innerHTML += `
+                    <article class="product-card ${p.stock > 0 ? '' : 'out-of-stock'}">
+                        <div class="image-wrapper">${stockBadge}<img src="${p.images[0]}" class="product-img">${p.stock > 0 ? `<button class="quick-view-btn" onclick="openProduct(${p.id})">Ver</button>` : ''}</div>
+                        <div class="product-info"><span class="category-tag">${p.categoria}</span><h3 class="product-name">${p.nombre}</h3><div class="flex justify-between"><span class="price-container">$${p.precio}</span><span class="stock-info">Stock: ${p.stock}</span></div></div>
+                    </article>`;
+            });
+        }
+        function openProduct(id) {
+            productSelected = products.find(p => p.id === id);
+            document.getElementById('viewImg').src = productSelected.images[0];
+            document.getElementById('viewTitle').textContent = productSelected.name;
+            // Mostrar descripción
+            document.getElementById('viewDesc').textContent = productSelected.desc || "Sin descripción disponible.";
+            
+            document.getElementById('viewPrice').textContent = "$ " + productSelected.precio;
+            document.getElementById('viewStock').textContent = `Disponibles: ${productSelected.stock}`;
+            document.getElementById('qtyInput').max = productSelected.stock;
+            document.getElementById('qtyInput').value = 1;
+            document.getElementById('modalView').classList.add('active');
+        }
+        function agregarAlCarrito() {
+            const qty = parseInt(document.getElementById('qtyInput').value);
+            if(qty > productSelected.stock) return alert("Stock insuficiente");
+            const exist = cart.find(c => c.id === productSelected.id);
+            if(exist) exist.qty += qty; else cart.push({...productSelected, qty});
+            updateCartBadge(); cerrarModales();
+        }
+        function updateCartBadge() {
+            const c = cart.reduce((a, b) => a + b.qty, 0);
+            const b = document.getElementById('cartBadge');
+            b.textContent = c;
+            b.classList.toggle('visible', c > 0);
+        }
+
+        // --- CHECKOUT ---
+        function abrirCheckout() {
+            if(cart.length === 0) return alert("Carrito vacío");
+            const infoBox = document.getElementById('checkoutInfoBox');
+            const nameInput = document.getElementById('checkoutClientName');
+            if(currentStaff) {
+                infoBox.innerHTML = `Venta registrada por: <strong>${currentStaff.name}</strong>`;
+                nameInput.value = "";
+            } else if (currentClient) {
+                infoBox.innerHTML = `Comprando como: <strong>${currentClient.name}</strong>`;
+                nameInput.value = currentClient.name;
+            } else {
+                infoBox.innerHTML = `Comprando como <strong>Invitado</strong> (<a href="#" onclick="abrirModalCliente()">Iniciar Sesión</a>)`;
+                nameInput.value = "";
+            }
+            cerrarModales(); document.getElementById('modalCheckout').classList.add('active');
+        }
+
+        function finalizarCompra(e) {
+            e.preventDefault();
+            const total = cart.reduce((a, b) => a + (b.precio * b.qty), 0);
+            const isStaffSale = !!currentStaff;
+            const sellerUser = isStaffSale ? currentStaff.user : 'online';
+            const sellerName = isStaffSale ? currentStaff.name : 'Venta Online';
+            const status = isStaffSale ? 'pending' : 'paid'; 
+
+            const newSale = { id: Date.now(), date: new Date().toLocaleString(), sellerUser, sellerName, total, items: cart, status };
+            sales.unshift(newSale); localStorage.setItem(DB.SALES, JSON.stringify(sales));
+
+            cart.forEach(c => { const p = products.find(x => x.id === c.id); if(p) p.stock -= c.qty; });
+            localStorage.setItem(DB.PRODS, JSON.stringify(products));
+
+            cart = []; updateCartBadge(); renderProducts(); cerrarModales();
+            alert("¡Pedido realizado con éxito!");
+        }
+
+        // --- ADMIN PANEL ---
+        function abrirPanelAdmin() {
+            if(!currentStaff) return;
+            const role = currentStaff.role;
+            document.querySelectorAll('.role-admin').forEach(e => e.style.display = role === 'admin' ? 'block' : 'none');
+            document.querySelectorAll('.role-seller').forEach(e => e.style.display = role === 'seller' ? 'block' : 'none');
+            if(role === 'admin') { switchAdminTab('productos'); renderAdminInventory(); renderAdminUsers(); renderAdminReports(); }
+            else { switchAdminTab('mis-ventas'); renderSellerReport(); }
+            document.getElementById('modalAdmin').classList.add('active');
+        }
+        function switchAdminTab(t) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-'+t).classList.add('active');
+            const tabs = document.querySelectorAll('.admin-tab');
+            for(let tab of tabs) { if(tab.innerText.toLowerCase().includes(t.substring(0,3))) tab.classList.add('active'); }
+        }
+        
+        // Guardar Producto
+        async function guardarProducto(e) {
+            e.preventDefault();
+            const readFile = (id) => {
+                const input = document.getElementById(id);
+                if (input.files && input.files[0]) {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target.result);
+                        reader.readAsDataURL(input.files[0]);
+                    });
+                }
+                return Promise.resolve(null);
+            };
+            const imagePromises = [readFile('inputImage1'), readFile('inputImage2'), readFile('inputImage3'), readFile('inputImage4')];
+            const rawImages = await Promise.all(imagePromises);
+            const cleanImages = rawImages.filter(img => img !== null);
+
+            const p = {
+                id: Date.now(),
+                nombre: document.getElementById('inputName').value,
+                desc: document.getElementById('inputDesc').value,
+                categoria: document.getElementById('inputCategory').value,
+                precio: parseFloat(document.getElementById('inputPrice').value),
+                stock: parseInt(document.getElementById('inputStock').value),
+                images: cleanImages.length > 0 ? cleanImages : ['https://via.placeholder.com/400']
+            };
+            products.unshift(p); localStorage.setItem(DB.PRODS, JSON.stringify(products));
+            renderProducts(); renderAdminInventory(); document.getElementById('modalAddProduct').classList.remove('active'); e.target.reset();
+        }
+
+        function crearUsuario(e) {
+            e.preventDefault();
+            const u = { id: Date.now(), name: document.getElementById('newUserName').value, user: document.getElementById('newUserUser').value, pass: document.getElementById('newUserPass').value, role: 'seller' };
+            staffList.push(u); localStorage.setItem(DB.STAFF, JSON.stringify(staffList)); renderAdminUsers(); e.target.reset();
+        }
+        
+        // Render Inventario Admin con 'X'
+        function renderAdminInventory() { 
+            document.getElementById('inventoryTableBody').innerHTML = products.map(p => `<tr><td>${p.nombre}</td><td>$${p.precio}</td><td>${p.stock}</td><td><button class="btn-danger" onclick="solicitarBorrar(${p.id})">X</button></td></tr>`).join(''); 
+        }
+        
+        function renderAdminUsers() { document.getElementById('usersTableBody').innerHTML = staffList.map(u => `<tr><td>${u.name}</td><td>${u.user}</td><td>${u.role}</td><td>-</td></tr>`).join(''); }
+        
+        // Lógica de Borrado con Modal
+        function solicitarBorrar(id) {
+            productToDeleteId = id;
+            document.getElementById('modalConfirm').classList.add('active');
+        }
+
+        function ejecutarBorrado() {
+            if (productToDeleteId) {
+                products = products.filter(p => p.id !== productToDeleteId);
+                localStorage.setItem(DB.PRODS, JSON.stringify(products));
+                renderProducts();
+                renderAdminInventory();
+                productToDeleteId = null;
+                cerrarModales(); // Cerrar el modal de confirmación
+            }
+        }
+
+        // Reportes
+        function renderAdminReports() {
+            document.getElementById('salesTableBody').innerHTML = sales.map(s => `<tr><td>${s.date.split(',')[0]}</td><td>${s.sellerName}</td><td>$${s.total}</td><td><span class="sale-status ${s.status}">${s.status==='settled'?'Liquidado':s.status==='paid'?'Online': 'Pendiente'}</span></td></tr>`).join('');
+            const cashRep = {}; staffList.forEach(u => cashRep[u.user] = {name:u.name, total:0});
+            sales.forEach(s => { if(s.status === 'pending' && cashRep[s.sellerUser]) cashRep[s.sellerUser].total += s.total; });
+            document.getElementById('cashReportBody').innerHTML = Object.keys(cashRep).map(k => {
+                const d = cashRep[k]; const btn = d.total > 0 ? `<button class="btn-primary" style="padding:2px 6px; font-size:0.7rem;" onclick="liquidar('${k}')">Liquidar</button>` : 'OK';
+                return `<tr><td>${d.name}</td><td>$${d.total}</td><td>${btn}</td></tr>`;
+            }).join('');
+        }
+        function liquidar(u) { if(!confirm("¿Confirmar corte de caja?")) return; sales.forEach(s => { if(s.sellerUser === u && s.status === 'pending') s.status = 'settled'; }); localStorage.setItem(DB.SALES, JSON.stringify(sales)); renderAdminReports(); }
+        function renderSellerReport() {
+            const mys = sales.filter(s => s.sellerUser === currentStaff.user);
+            const tot = mys.reduce((a,b) => b.status === 'pending' ? a + b.total : a, 0);
+            document.getElementById('myCashTotal').textContent = `$${tot}`;
+            document.getElementById('mySalesTableBody').innerHTML = mys.map(s => `<tr><td>${s.date}</td><td>$${s.total}</td><td>${s.status}</td></tr>`).join('');
+        }
+
+        function cerrarModales() { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); }
+        function abrirFormProducto() { document.getElementById('modalAddProduct').classList.add('active'); }
+        function abrirCarrito() { 
+            document.getElementById('cartItemsContainer').innerHTML = cart.map(i => `<div class="flex justify-between mb-20 border-bottom"><div><strong>${i.nombre}</strong><br><small>${i.qty} x $${i.precio}</small></div><div>$${i.qty*i.precio}</div></div>`).join('');
+            document.getElementById('cartTotalValue').textContent = "$"+cart.reduce((a,b)=>a+(b.qty*b.precio),0);
+            document.getElementById('modalCart').classList.add('active');
+        }
+        function filtrarCategoria(c) { currentFilter = c; renderProducts(); }
+
+        renderProducts(); updateUI();
+    </script>
+</body>
+</html>
